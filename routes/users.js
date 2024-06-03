@@ -5,6 +5,6 @@ const { isNewUser, register, login } = require('../controllers/usersController')
 
 router.post('/isnewuser', isNewUser);
 router.post('/register', register);
-router.post('/isnewuser', login);
+router.post('/login', login);
 
 module.exports = router;
