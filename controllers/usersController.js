@@ -95,3 +95,15 @@ module.exports.login = async function (req, res) {
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+// get user details
+module.exports.getUserDetails = async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+        res.status(200).json({ user });
+    } catch (error) {
+        res.status(500).json({
+            message: error.message,
+        });
+    }
+};
