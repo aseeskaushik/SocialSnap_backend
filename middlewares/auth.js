@@ -13,7 +13,7 @@ module.exports.verifyToken = function (req, res, next) {
             return res.status(403).json({ message: 'Failed to authenticate token' });
         }
         // Store decoded token in request object for further use
-        req.userId = decoded.userId;
+        req.body.userId = decoded.userId;
         next();
     });
 }

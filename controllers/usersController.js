@@ -49,7 +49,7 @@ module.exports.register = async function (req, res) {
         await newUser.save();
 
         // Generate JWT token for the newly registered user
-        const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         // Return token along with success message
         return res.status(201).json({
@@ -85,7 +85,7 @@ module.exports.login = async function (req, res) {
         }
 
         // Generate JWT token
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
         // console.log('User logged in successfully:', email);
 
         // Return token to the client
@@ -99,7 +99,7 @@ module.exports.login = async function (req, res) {
 // get user details
 module.exports.getUserDetails = async (req, res) => {
     try {
-        const user = await User.findById(req.userId);
+        const user = await User.findById(req.body.userId);
         res.status(200).json({ user });
     } catch (error) {
         res.status(500).json({
