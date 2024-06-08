@@ -2,32 +2,36 @@ const User = require('../models/user');
 const Follow = require('../models/follow');
 
 module.exports.addFollowing = async function (req, res) {
-    const { userId, followingId } = req.body;
+    const { followingId } = req.body;
+    const userId = req.body.userId;
 
     try {
-        // Find the Follow document for the current user
+        if (!userId || !followingId) {
+            return res.status(400).json({
+                success: false,
+                message: 'userId and followingId are required'
+            });
+        }
+
         let userFollowDoc = await Follow.findOne({ user: userId });
         if (!userFollowDoc) {
-            userFollowDoc = new Follow({ user: userId });
+            userFollowDoc = new Follow({ user: userId, followers: [], followings: [] });
         }
 
-        // Add followingId to the followings array if not already added
         if (!userFollowDoc.followings.includes(followingId)) {
             userFollowDoc.followings.push(followingId);
-            await userFollowDoc.save();
         }
+        await userFollowDoc.save();
 
-        // Find the Follow document for the user being followed
         let followingUserDoc = await Follow.findOne({ user: followingId });
         if (!followingUserDoc) {
-            followingUserDoc = new Follow({ user: followingId });
+            followingUserDoc = new Follow({ user: followingId, followers: [], followings: [] });
         }
 
-        // Add userId to the followers array if not already added
         if (!followingUserDoc.followers.includes(userId)) {
             followingUserDoc.followers.push(userId);
-            await followingUserDoc.save();
         }
+        await followingUserDoc.save();
 
         res.status(200).json({
             success: true,
@@ -47,18 +51,14 @@ module.exports.removeFollowing = async function (req, res) {
     const { followingId } = req.params;
 
     try {
-        // Find the Follow document for the current user
         let userFollowDoc = await Follow.findOne({ user: userId });
         if (userFollowDoc) {
-            // Remove followingId from the followings array
             userFollowDoc.followings = userFollowDoc.followings.filter(id => id.toString() !== followingId);
             await userFollowDoc.save();
         }
 
-        // Find the Follow document for the user being unfollowed
         let followingUserDoc = await Follow.findOne({ user: followingId });
         if (followingUserDoc) {
-            // Remove userId from the followers array
             followingUserDoc.followers = followingUserDoc.followers.filter(id => id.toString() !== userId);
             await followingUserDoc.save();
         }
@@ -77,20 +77,15 @@ module.exports.removeFollowing = async function (req, res) {
 };
 
 module.exports.getFollowings = async function (req, res) {
-    const { userId } = req.body;
+    const { Id } = req.params;
+    console.log('Props:', Id)
 
     try {
-        // Find the Follow document for the current user and populate the followings array
-        const followDoc = await Follow.findOne({ user: userId }).populate({
-            path: 'followings',
-            select: '_id username fullName userImgUrl'
-        });
-
-        // Check if the follow document exists
+        const followDoc = await Follow.findOne({ user: Id }).populate('followings');
         if (!followDoc) {
             return res.status(404).json({
                 success: false,
-                message: 'Follow document not found'
+                message: 'No followings found for this user.'
             });
         }
 
@@ -107,22 +102,15 @@ module.exports.getFollowings = async function (req, res) {
     }
 };
 
-
 module.exports.getFollowers = async function (req, res) {
-    const { userId } = req.body;
+    const { Id } = req.params;
 
     try {
-        // Find the Follow document for the current user and populate the followers array
-        const followDoc = await Follow.findOne({ user: userId }).populate({
-            path: 'followers',
-            select: '_id username fullName userImgUrl' // Select the fields you need from the User model
-        });
-
-        // Check if the follow document exists
+        const followDoc = await Follow.findOne({ user: Id }).populate('followers');
         if (!followDoc) {
             return res.status(404).json({
                 success: false,
-                message: 'Follow document not found'
+                message: 'No followers found for this user.'
             });
         }
 
@@ -139,7 +127,6 @@ module.exports.getFollowers = async function (req, res) {
     }
 };
 
-// get suggestions controller
 module.exports.getSuggestions = async function (req, res) {
     try {
         const { userId } = req.body;

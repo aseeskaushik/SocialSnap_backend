@@ -5,8 +5,8 @@ const { getSuggestions, addFollowing, getFollowers, getFollowings, removeFollowi
 
 router.post('/addfollowing', verifyToken, addFollowing);
 router.delete('/removefollowing/:followingId', verifyToken, removeFollowing);
-router.get('/getfollowings', getFollowings);
-router.get('/getfollowers', getFollowers);
+router.get('/getfollowings/:Id', getFollowings);
+router.get('/getfollowers/:Id', getFollowers);
 
 // suggestions route
 router.get('/getsuggestions', verifyToken, getSuggestions);
