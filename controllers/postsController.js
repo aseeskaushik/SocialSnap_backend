@@ -90,7 +90,7 @@ module.exports.createPost = async (req, res) => {
         await newPost.save();
 
         // Populate user information
-        await newPost.populate('user', 'fullName');
+        await newPost.populate('user', 'username _id');
 
         // Return created post
         return res.status(201).json({ post: newPost });
