@@ -11,20 +11,4 @@ module.exports.getMessages = async (req, res) => {
     }
 };
 
-module.exports.sendMessage = async (req, res) => {
-    try {
-        const { chatId, content } = req.body;
-        const message = new Message({
-            sender: req.user._id,
-            content,
-            chat: chatId
-        });
-        await message.save();
 
-        await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
-
-        res.status(201).json({ message: await message.populate('sender', 'username userImgUrl').execPopulate() });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to send message' });
-    }
-};

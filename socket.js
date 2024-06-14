@@ -1,6 +1,9 @@
 const socketIo = require('socket.io');
+const User = require('./models/user'); // Import User model
 const Message = require('./models/message');
 const Chat = require('./models/chat');
+const Post = require('./models/post');
+const cloudinary = require('cloudinary').v2;
 
 const socketHandler = (server) => {
     const io = socketIo(server, {
@@ -9,35 +12,103 @@ const socketHandler = (server) => {
         },
     });
 
+    const onlineUsers = {};
+
+    const updateLastActive = async (userId) => {
+        await User.findByIdAndUpdate(userId, { lastActive: new Date() });
+    };
+
     io.on('connection', (socket) => {
-        // console.log('New client connected:', socket.id);
+        socket.on('userConnected', (userId) => {
+            onlineUsers[userId] = socket.id;
+            io.emit('userStatusUpdate', { userId, status: 'online' });
+        });
 
         socket.on('joinChat', (chatId) => {
             socket.join(chatId);
-            // console.log(`User joined chat: ${chatId}`);
         });
 
-        socket.on('leaveChat', (chatId) => {
+        socket.on('leaveChat', async ({ chatId, userId }) => {
             socket.leave(chatId);
-            // console.log(`User left chat: ${chatId}`);
+            await updateLastActive(userId);
+            io.emit('userStatusUpdate', { userId, status: 'offline', lastActive: new Date() });
         });
 
-        socket.on('messages/sendmessage', async ({ chatId, message }) => {
+        socket.on('messages/sendmessage', async ({ chatId, messageData }) => {
             try {
-                const newMessage = new Message(message);
+                const newMessage = new Message(messageData);
+                if (messageData.document) {
+                    const uploadResult = await cloudinary.uploader.upload(messageData.document, {
+                        folder: 'chat_documents',
+                    });
+                    newMessage.document = uploadResult.secure_url;
+                }
+
                 await newMessage.save();
+                const message = await newMessage.populate('sender', 'fullName userImgUrl');
+                await Chat.findByIdAndUpdate(chatId, { latestMessage: message._id }, { new: true })
+                    .populate('users', 'fullName userImgUrl')
+                    .populate({
+                        path: 'latestMessage',
+                        populate: {
+                            path: 'sender',
+                            select: 'fullName userImgUrl',
+                        },
+                    });
 
-                const populatedMessage = await Message.findById(newMessage._id).populate('sender', 'username userImgUrl');
-                io.to(chatId).emit('receiveMessage', populatedMessage);
-
-                await Chat.findByIdAndUpdate(chatId, { latestMessage: newMessage });
+                io.to(chatId).emit('receiveMessage', message);
             } catch (error) {
-                console.error("Error sending message:", error);
+                console.error(error);
             }
         });
 
-        socket.on('disconnect', () => {
-            // console.log('Client disconnected:', socket.id);
+
+        socket.on('likePost', async ({ postId, userId }) => {
+            try {
+                const post = await Post.findById(postId);
+                if (post) {
+                    const index = post.likes.indexOf(userId);
+                    if (index === -1) {
+                        post.likes.push(userId);
+                    } else {
+                        post.likes.splice(index, 1);
+                    }
+                    await post.save();
+                    io.emit('postLiked', { postId, likes: post.likes });
+                }
+            } catch (error) {
+                console.error("Error liking post:", error);
+            }
+        });
+
+        // Handle commenting on posts
+        socket.on('commentPost', async ({ postId, userId, text }) => {
+            try {
+                const post = await Post.findById(postId);
+                if (post) {
+                    post.comments.push({ user: userId, text });
+                    await post.save();
+
+                    await post.populate({
+                        path: 'comments.user',
+                        select: 'username fullName'
+                    });
+
+                    io.emit('postCommented', { postId, comments: post.comments });
+                }
+            } catch (error) {
+                console.error("Error commenting on post:", error);
+            }
+        });
+
+
+        socket.on('disconnect', async () => {
+            const userId = Object.keys(onlineUsers).find(key => onlineUsers[key] === socket.id);
+            if (userId) {
+                delete onlineUsers[userId];
+                await updateLastActive(userId);
+                io.emit('userStatusUpdate', { userId, status: 'offline', lastActive: new Date() });
+            }
         });
     });
 };

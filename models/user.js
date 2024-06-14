@@ -41,6 +41,10 @@ const userSchema = new mongoose.Schema({
             type: String,
             default: 'https://res.cloudinary.com/do9iye8wa/image/upload/v1717740281/avatars/bsab0qskwyfaruw6nqu7.jpg'
         },
+    },
+    lastActive: {
+        type: Date,
+        default: Date.now
     }
 });
 

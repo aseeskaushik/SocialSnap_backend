@@ -17,10 +17,10 @@ exports.createChat = async (req, res) => {
 
 exports.getChats = async (req, res) => {
     try {
-        console.log(req.body.userId)
-        console.log("dfndfkdfnkdf")
+        // console.log(req.body.userId)
+        // console.log("dfndfkdfnkdf")
         const chats = await Chat.find({ users: { $in: [req.body.userId] } })
-            .populate('users', '_id username userImgUrl fullName')
+            .populate('users', '_id username userImgUrl fullName lastActive')
             .populate('latestMessage');
         res.status(200).json({ chats });
     } catch (error) {

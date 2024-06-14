@@ -6,7 +6,6 @@ const { getChats, createChat } = require('../controllers/chatController');
 
 // message routes
 router.get('/getmessages/:chatId', verifyToken, getMessages);
-router.post('/dendmessage/', verifyToken, sendMessage);
 
 // chat routes routes
 router.get('/getchats', verifyToken, getChats);

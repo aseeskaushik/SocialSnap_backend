@@ -5,14 +5,22 @@ const cloudinary = require('../config/cloudinary');
 
 module.exports.getPosts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
-    const perPage = 10; // Adjust as needed
+    const perPage = 10;
 
     try {
         const posts = await Post.find()
-            .sort({ createdAt: -1 }) // Sort by newest first
+            .sort({ createdAt: -1 })
             .skip((page - 1) * perPage)
             .limit(perPage)
-            .populate('user', 'username _id'); // Populate the 'user' field with 'fullName' only
+            .populate('user', 'username fullName _id')
+            .populate({
+                path: 'comments.user',
+                select: 'username userImgUrl'
+            })
+            .populate({
+                path: 'likes',
+                select: 'username userImgUrl'
+            });
 
         const totalPosts = await Post.countDocuments();
         const hasMore = totalPosts > page * perPage;
@@ -24,34 +32,29 @@ module.exports.getPosts = async (req, res) => {
     }
 };
 
+
 module.exports.createPost = async (req, res) => {
-    const { caption } = req.body;
-    const { file: postFile } = req.files; // Change 'image' to 'file'
-    console.log(postFile); // Log the extracted file
-    const userId = req.body.userId; // Assuming you have user ID from the authenticated user
+    const { caption, userId } = req.body;
+    const { file: postFile } = req.files;
 
     try {
         let mediaUrl;
         let isReel = false;
 
-        if (postFile) { // Change 'image' to 'postFile'
-            // Create the temp directory if it doesn't exist
+        if (postFile) {
             const tempDir = path.join(__dirname, '..', 'temp');
             if (!fs.existsSync(tempDir)) {
                 fs.mkdirSync(tempDir);
             }
 
-            const filePath = path.join(tempDir, postFile.name); // Change 'imagePath' to 'filePath'
+            const filePath = path.join(tempDir, postFile.name);
 
             try {
-                // Write the buffer data to a temporary file
-                await postFile.mv(filePath); // Change 'image' to 'postFile'
+                await postFile.mv(filePath);
 
-                // Check the file extension or MIME type
-                const fileExtension = path.extname(postFile.name).toLowerCase(); // Change 'image' to 'postFile'
-                const mimeType = postFile.mimetype.toLowerCase(); // Change 'image' to 'postFile'
+                const fileExtension = path.extname(postFile.name).toLowerCase();
+                const mimeType = postFile.mimetype.toLowerCase();
 
-                // Set isReel based on file type
                 const videoExtensions = ['.mp4', '.mov', '.avi'];
                 const videoMimeTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo'];
 
@@ -59,13 +62,11 @@ module.exports.createPost = async (req, res) => {
                     isReel = true;
                 }
 
-                // Upload the temporary file to Cloudinary
                 const uploadedFile = await cloudinary.uploader.upload(filePath, {
-                    folder: isReel ? 'reels' : 'posts', // Folder to store reels or posts files
-                    resource_type: isReel ? 'video' : 'auto', // Type of resource being uploaded
+                    folder: isReel ? 'reels' : 'posts',
+                    resource_type: isReel ? 'video' : 'auto',
                 });
 
-                // Delete the temporary file after uploading
                 fs.unlinkSync(filePath);
 
                 mediaUrl = {
@@ -78,7 +79,6 @@ module.exports.createPost = async (req, res) => {
             }
         }
 
-        // Create new post
         const newPost = new Post({
             user: userId,
             mediaUrl,
@@ -86,13 +86,10 @@ module.exports.createPost = async (req, res) => {
             isReel
         });
 
-        // Save new post
         await newPost.save();
 
-        // Populate user information
-        await newPost.populate('user', 'username _id');
+        await newPost.populate('user', 'username fullName');
 
-        // Return created post
         return res.status(201).json({ post: newPost });
     } catch (error) {
         console.error("Error creating post:", error);

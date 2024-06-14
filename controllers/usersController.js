@@ -116,6 +116,7 @@ module.exports.getUserDetails = async (req, res) => {
 module.exports.updateProfile = async (req, res) => {
     const { userId, fullName, bio, website, gender } = req.body;
     const { avatar } = req.files;
+    console.log(avatar)
 
     try {
         // Check if the user exists
@@ -183,3 +184,24 @@ module.exports.updateProfile = async (req, res) => {
     }
 };
 
+module.exports.getSearchResults = async (req, res) => {
+    const query = req.query.query;
+    if (!query) {
+        return res.status(400).json({ message: 'Query parameter is required' });
+    }
+
+    try {
+        const regex = new RegExp(query, 'i'); // Case-insensitive search
+        const users = await User.find({
+            $or: [
+                { username: regex },
+                { fullName: regex },
+                { email: regex }
+            ]
+        }).select('username fullName userImgUrl _id');
+
+        res.json({ results: users });
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch search results', error: error.message });
+    }
+};

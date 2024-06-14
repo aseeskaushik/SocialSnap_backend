@@ -138,7 +138,7 @@ module.exports.getSuggestions = async function (req, res) {
 
         const suggestedUsers = await User.find({
             _id: { $nin: followings }
-        }).limit(20);
+        }).limit(5);
 
         res.status(200).json({
             success: true,
