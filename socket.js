@@ -8,9 +8,13 @@ const cloudinary = require('cloudinary').v2;
 const socketHandler = (server) => {
     const io = socketIo(server, {
         cors: {
-            origin: 'http://localhost:5173',
+            origin: [
+                'http://localhost:5173',
+                'https://social-snap-frontend.vercel.app/'
+            ],
         },
     });
+    
 
     const onlineUsers = {};
 
@@ -41,7 +45,10 @@ const socketHandler = (server) => {
                     const uploadResult = await cloudinary.uploader.upload(messageData.document, {
                         folder: 'chat_documents',
                     });
-                    newMessage.document = uploadResult.secure_url;
+                    newMessage.document = {
+                        public_id: uploadResult.public_id,
+                        url: uploadResult.secure_url
+                    };
                 }
 
                 await newMessage.save();
@@ -61,6 +68,7 @@ const socketHandler = (server) => {
                 console.error(error);
             }
         });
+
 
 
         socket.on('likePost', async ({ postId, userId }) => {
