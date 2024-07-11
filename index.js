@@ -12,7 +12,7 @@ const port = process.env.PORT;
 
 dB();
 
-// Specify CORS options to allow access only from 'http://localhost:5173'
+// Specify CORS options to allow access only from 'http://:5173'
 const corsOptions = {
     origin: [
         'http://localhost:5173',
