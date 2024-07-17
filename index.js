@@ -13,15 +13,20 @@ const port = process.env.PORT;
 dB();
 
 // Specify CORS options to allow access only from 'http://:5173'
-const corsOptions = {
-    origin: [
-        'https://social-snap-frontend.vercel.app/',
-        'http://localhost:5173'
-    ],
-};
+// const corsOptions = {
+//     origin: [
+//         'https://social-snap-frontend.vercel.app/',
+//         'http://localhost:5173'
+//     ],
+// };
 
 
-app.use(cors(corsOptions)); // Use CORS middleware with custom options
+// app.use(cors(corsOptions)); // Use CORS middleware with custom options
+app.use(
+    cors({
+      origin: ["https://social-snap-frontend.vercel.app"],
+    })
+  );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
