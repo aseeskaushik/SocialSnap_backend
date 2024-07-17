@@ -15,8 +15,8 @@ dB();
 // Specify CORS options to allow access only from 'http://:5173'
 const corsOptions = {
     origin: [
-        'http://localhost:5173',
-        'https://social-snap-frontend.vercel.app/'
+        'https://social-snap-frontend.vercel.app/',
+        'http://localhost:5173'
     ],
 };
 
