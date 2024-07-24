@@ -24,7 +24,7 @@ dB();
 // app.use(cors(corsOptions)); // Use CORS middleware with custom options
 app.use(
     cors({
-      origin: ["http://localhost:5173"],
+      origin: ["https://social-snap-frontend.vercel.app"],
     })
   );
 app.use(express.json());
