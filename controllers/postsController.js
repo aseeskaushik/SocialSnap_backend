@@ -12,7 +12,7 @@ module.exports.getPosts = async (req, res) => {
             .sort({ createdAt: -1 })
             .skip((page - 1) * perPage)
             .limit(perPage)
-            .populate('user', 'username fullName _id')
+            .populate('user', 'username fullName _id userImgUrl')
             .populate({
                 path: 'comments.user',
                 select: 'username userImgUrl'
@@ -21,7 +21,7 @@ module.exports.getPosts = async (req, res) => {
                 path: 'likes',
                 select: 'username userImgUrl'
             });
-
+        console.log(posts)
         const totalPosts = await Post.countDocuments();
         const hasMore = totalPosts > page * perPage;
 
